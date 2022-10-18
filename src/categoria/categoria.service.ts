@@ -1,0 +1,70 @@
+import { Injectable, Inject } from '@nestjs/common';
+import { DeleteResult, ILike, Repository } from 'typeorm';
+import { HttpStatus } from '@nestjs/common/enums';
+import { HttpException } from '@nestjs/common/exceptions';
+import { CreateCategoriaDto } from './dto/create-categoria.dto';
+import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { Categoria } from './entities/categoria.entity';
+
+@Injectable()
+export class CategoriasService {
+
+  constructor(
+    @Inject('CATEGORIAS_REPOSITORY')
+    private categoriasRepository: Repository<Categoria>
+  ) {}
+
+  async findAll(): Promise<Categoria[]> {
+    return await this.categoriasRepository.find();
+  }
+
+  async findById(id: number): Promise<Categoria> {
+
+    let categoria = await this.categoriasRepository.findOne({
+
+      where: {
+        id
+      }
+
+    });
+
+    if(!categoria) {
+
+      throw new HttpException('Categoria não encontrado!', HttpStatus.NOT_FOUND);
+
+    }
+
+    return categoria; 
+  }
+  
+  async findByName(genero: string): Promise<Categoria[]> {
+
+    return await this.categoriasRepository.find({
+
+      where:{
+
+        genero: ILike(`%${genero}%`)
+
+      }
+    });
+    
+  }
+  
+  async create(createCategoriaDto: CreateCategoriaDto): Promise<CreateCategoriaDto> {
+    return this.categoriasRepository.save(createCategoriaDto);
+  }
+
+  async update(id: number, updateCategoriaDto: UpdateCategoriaDto) {
+    return this.categoriasRepository.update(id, updateCategoriaDto);
+  }
+
+  async delete(id: number): Promise<DeleteResult> {
+
+    let buscaCategoria = await this.findById(id);
+
+    if (!buscaCategoria) {
+        throw new HttpException('Categoria não encontrada!', HttpStatus.NOT_FOUND)
+    }
+    return await this.categoriasRepository.delete(id);
+  }
+}
